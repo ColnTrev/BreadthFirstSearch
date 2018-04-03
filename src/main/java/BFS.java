@@ -2,6 +2,7 @@ import org.apache.spark.Accumulator;
 import org.apache.spark.AccumulatorParam$class;
 import org.apache.spark.InternalAccumulator;
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
@@ -10,9 +11,7 @@ import org.apache.spark.util.LongAccumulator;
 import scala.Tuple2;
 import scala.Tuple3;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by ColnTrev1 on 4/2/18.
@@ -35,38 +34,39 @@ public class BFS {
 
         JavaRDD<String> lines = context.textFile(inputFile);
 
-        JavaRDD<Tuple2<String, Tuple3<String, Integer, String>>> operations = lines.map((String line)->{
+        JavaRDD<Tuple2<String, Data>> operations = lines.map((String line)->{
             String[] tokens = line.split(";");
             String node = tokens[0];
-            String connections = tokens[1];
+            List<String> connections = new ArrayList<>(Arrays.asList(tokens[1]));
             Integer distance = Integer.MAX_VALUE;
             String status = "WHITE";
             if(node.equals(sourceId)){
                 distance = 0;
                 status = "GREY";
             }
-            return new Tuple2<>(node, new Tuple3<>(connections, distance, status));
+
+
+            return new Tuple2<>(node, new Data(connections,distance,status));
         });
         for(int i = 0; i < limit; i++){
-            JavaRDD<Tuple2<String, Tuple3<String,Integer,String>>> processed =
-                    operations.flatMap((Tuple2<String, Tuple3<String,Integer,String>> entry)->{
+            JavaPairRDD<String, Data> processed =
+                    operations.flatMap((Tuple2<String, Data> entry)->{
                         List<Tuple2<String, Tuple3<String,Integer,String>>> results = new ArrayList<>();
                         String node = entry._1();
-                        String[] connections = entry._2()._1().split(",");
-                        Integer distance = entry._2()._2();
-                        String status = entry._2()._3();
+                        String[] connections = entry._2()
+                        Integer distance = entry._2().distance;
+                        String status = entry._2().status;
 
                         if(status.equals("GREY")){
                             for(String connection : connections) {
                                 String nextNode = connection;
-                                String cons = "";
                                 Integer nextDistance = distance + 1;
                                 String nextStatus = "GREY";
                                 if (nextNode.equals(targetId)) {
                                     encountered.add(1);
                                 }
                                 Tuple2<String, Tuple3<String, Integer, String>> newEntry =
-                                        new Tuple2<>(nextNode, new Tuple3<>(cons, nextDistance, nextStatus));
+                                        new Tuple2<>(nextNode, new Data(new ArrayList<>(), nextDistance, nextStatus));
                                 results.add(newEntry);
                             }
                         }
