@@ -16,15 +16,19 @@ import java.util.*;
  */
 public class BFS {
     public static void main(String[] args){
-        if(args.length < 3){
-            System.out.println("Usage: <input path> <source> <target> <max iterations>");
-            System.exit(-1);
-        }
-        String inputFile = args[0];
-        String source = args[1];
-        String target = args[2];
-        Integer limit = Integer.parseInt(args[3]);
-        SparkConf conf = new SparkConf().setAppName("Breadth First Search");
+//        if(args.length < 3){
+//            System.out.println("Usage: <input path> <source> <target> <max iterations>");
+//            System.exit(-1);
+//        }
+//        String inputFile = args[0];
+//        String source = args[1];
+//        String target = args[2];
+//        Integer limit = Integer.parseInt(args[3]);
+        String inputFile = "/home/colntrev/IdeaProjects/BreadthFirstSearch/src/main/java/graph.txt";
+        String source = "1";
+        String target = "5";
+        Integer limit = 30;
+        SparkConf conf = new SparkConf().setMaster("local").setAppName("Breadth First Search");
         JavaSparkContext context = new JavaSparkContext(conf);
         LongAccumulator encountered = context.sc().longAccumulator();
         final Broadcast<String> sourceId = context.broadcast(source);
@@ -57,9 +61,12 @@ public class BFS {
                         String nextNode = connection;
                         Integer nextDistance = distance + 1;
                         String nextStatus = "GREY";
+
                         if (nextNode.equals(targetId)) {
                             encountered.add(1);
+                            System.out.println("Incrmented");
                         }
+
                         Tuple2<String, Data> newEntry = new Tuple2<>(nextNode, new Data(new ArrayList<>(), nextDistance, nextStatus));
                         results.add(newEntry);
                     }
@@ -76,6 +83,7 @@ public class BFS {
                 System.out.println("target found.");
                 break;
             }
+
             operations = processed.reduceByKey((Data k1, Data k2) ->{
                 List<String> cons = null;
                 Integer dist = Integer.MAX_VALUE;
