@@ -36,13 +36,15 @@ public class BFS {
 
         JavaRDD<String> lines = context.textFile(inputFile);
 
-        JavaPairRDD<String,Data> operations = lines.mapToPair((String line)->{
+        JavaPairRDD<String,Data> operations = lines.mapToPair(line->{
             String[] tokens = line.split(";");
             String node = tokens[0];
-            List<String> connections = new ArrayList<>(Arrays.asList(tokens[1]));
+            String[] cons = tokens[1].split(",");
+            List<String> connections = new ArrayList<>(Arrays.asList(cons));
+            System.out.println(connections);
             Integer distance = Integer.MAX_VALUE;
             String status = "WHITE";
-            if(node.equals(sourceId)){
+            if(node.equals(sourceId.value())){
                 distance = 0;
                 status = "GREY";
             }
@@ -50,10 +52,11 @@ public class BFS {
         });
 
         for(int i = 0; i < limit; i++){
-            JavaPairRDD<String, Data> processed = operations.flatMapToPair((Tuple2<String, Data> entry)->{
+            JavaPairRDD<String, Data> processed = operations.flatMapToPair(entry->{
                 List<Tuple2<String, Data>> results = new ArrayList<>();
                 String node = entry._1();
                 List<String> cons = entry._2().connections;
+
                 Integer distance = entry._2().distance;
                 String status = entry._2().status;
                 if(status.equals("GREY")){
@@ -61,10 +64,8 @@ public class BFS {
                         String nextNode = connection;
                         Integer nextDistance = distance + 1;
                         String nextStatus = "GREY";
-
-                        if (nextNode.equals(targetId)) {
+                        if (nextNode.equals(targetId.value())) {
                             encountered.add(1);
-                            System.out.println("Incrmented");
                         }
 
                         Tuple2<String, Data> newEntry = new Tuple2<>(nextNode, new Data(new ArrayList<>(), nextDistance, nextStatus));
@@ -84,7 +85,7 @@ public class BFS {
                 break;
             }
 
-            operations = processed.reduceByKey((Data k1, Data k2) ->{
+            operations = processed.reduceByKey((k1, k2) ->{
                 List<String> cons = null;
                 Integer dist = Integer.MAX_VALUE;
                 String stat = "WHITE";
@@ -117,5 +118,6 @@ public class BFS {
                 return new Data(cons, dist, stat);
             });
         }
+
     }
 }
