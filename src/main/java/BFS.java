@@ -24,9 +24,9 @@ public class BFS {
 //        String source = args[1];
 //        String target = args[2];
 //        Integer limit = Integer.parseInt(args[3]);
-        String inputFile = "/home/colntrev/IdeaProjects/BreadthFirstSearch/src/main/java/graph.txt";
-        String source = "1";
-        String target = "5";
+        String inputFile = "/home/colntrev/IdeaProjects/BreadthFirstSearch/src/main/java/bfsdata.txt";
+        String source = "8";
+        String target = "10";
         Integer limit = 30;
         SparkConf conf = new SparkConf().setMaster("local").setAppName("Breadth First Search");
         JavaSparkContext context = new JavaSparkContext(conf);
@@ -81,7 +81,7 @@ public class BFS {
             processed.collect(); //kicks off map function...spark trick
 
             if(encountered.value() > 0){
-                System.out.println("target found.");
+                System.out.println("target found after walking: " + (i + 1) + " nodes.");
                 break;
             }
 
