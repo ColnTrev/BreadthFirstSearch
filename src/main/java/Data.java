@@ -17,7 +17,11 @@ public class Data implements Serializable {
     }
 
     public Data(List<String> cons, Integer dist, String health){
-        connections = new ArrayList<>(cons);
+        if(cons != null) {
+            connections = new ArrayList<>(cons);
+        } else {
+            connections = new ArrayList<>();
+        }
         distance = dist;
         status = health;
     }

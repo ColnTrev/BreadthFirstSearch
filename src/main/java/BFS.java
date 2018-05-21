@@ -25,14 +25,11 @@ public class BFS {
 //        String target = args[2];
 //        Integer limit = Integer.parseInt(args[3]);
         String inputFile = "/home/colntrev/IdeaProjects/BreadthFirstSearch/src/main/java/bfsdata.txt";
-        String source = "8";
-        String target = "10";
-        Integer limit = 30;
+        String source = "1";
         SparkConf conf = new SparkConf().setMaster("local").setAppName("Breadth First Search");
         JavaSparkContext context = new JavaSparkContext(conf);
         LongAccumulator encountered = context.sc().longAccumulator();
         final Broadcast<String> sourceId = context.broadcast(source);
-        final Broadcast<String> targetId = context.broadcast(target);
 
         JavaRDD<String> lines = context.textFile(inputFile);
 
@@ -41,17 +38,19 @@ public class BFS {
             String node = tokens[0];
             String[] cons = tokens[1].split(",");
             List<String> connections = new ArrayList<>(Arrays.asList(cons));
-            System.out.println(connections);
             Integer distance = Integer.MAX_VALUE;
             String status = "WHITE";
             if(node.equals(sourceId.value())){
                 distance = 0;
                 status = "GREY";
+                encountered.add(1);
             }
             return new Tuple2<>(node, new Data(connections,distance,status));
         });
+        operations.collect();
 
-        for(int i = 0; i < limit; i++){
+        while(encountered.value() > 0){
+            encountered.setValue(0);
             JavaPairRDD<String, Data> processed = operations.flatMapToPair(entry->{
                 List<Tuple2<String, Data>> results = new ArrayList<>();
                 String node = entry._1();
@@ -59,15 +58,13 @@ public class BFS {
 
                 Integer distance = entry._2().distance;
                 String status = entry._2().status;
+
                 if(status.equals("GREY")){
                     for(String connection : cons) {
                         String nextNode = connection;
                         Integer nextDistance = distance + 1;
                         String nextStatus = "GREY";
-                        if (nextNode.equals(targetId.value())) {
-                            encountered.add(1);
-                        }
-
+                        encountered.add(1);
                         Tuple2<String, Data> newEntry = new Tuple2<>(nextNode, new Data(new ArrayList<>(), nextDistance, nextStatus));
                         results.add(newEntry);
                     }
@@ -78,13 +75,9 @@ public class BFS {
                 return results.iterator();
             });
 
-            processed.collect(); //kicks off map function...spark trick
-
-            if(encountered.value() > 0){
-                System.out.println("target found after walking: " + (i + 1) + " nodes.");
-                break;
-            }
-
+            //processed.collect(); //kicks off map function...spark trick
+            System.out.println("+++++PROCESSED RESULTS+++++++");
+            processed.foreach(entry -> System.out.println(entry._1() + " " + entry._2().status));
             operations = processed.reduceByKey((k1, k2) ->{
                 List<String> cons = null;
                 Integer dist = Integer.MAX_VALUE;
@@ -110,13 +103,18 @@ public class BFS {
                     stat = k2.status;
                 }
                 if(k1.status.equals("GREY") && k2.status.equals("BLACK")){
-                    stat = k1.status;
+                    stat = k2.status;
                 }
                 if(k1.status.equals("BLACK") && k2.status.equals("GREY")){
-                    stat = k2.status;
+                    stat = k1.status;
+                }
+                if(stat.equals("WHITE")){
+                    stat = k1.status;
                 }
                 return new Data(cons, dist, stat);
             });
+            System.out.println("+++++OPERATIONS RESULTS+++++++");
+            operations.foreach(entry -> System.out.println(entry._1() + ' ' + entry._2().status));
         }
 
     }
