@@ -16,17 +16,13 @@ import java.util.*;
  */
 public class BFS {
     public static void main(String[] args){
-//        if(args.length < 3){
-//            System.out.println("Usage: <input path> <source> <target> <max iterations>");
-//            System.exit(-1);
-//        }
-//        String inputFile = args[0];
-//        String source = args[1];
-//        String target = args[2];
-//        Integer limit = Integer.parseInt(args[3]);
-        String inputFile = "/home/colntrev/IdeaProjects/BreadthFirstSearch/src/main/java/bfsdata.txt";
+        if(args.length < 3){
+            System.out.println("Usage: <input path> <source> <target> <max iterations>");
+            System.exit(-1);
+        }
+        String inputFile = args[0];
         String source = "1";
-        SparkConf conf = new SparkConf().setMaster("local").setAppName("Breadth First Search");
+        SparkConf conf = new SparkConf().setAppName("Breadth First Search");
         JavaSparkContext context = new JavaSparkContext(conf);
         LongAccumulator encountered = context.sc().longAccumulator();
         final Broadcast<String> sourceId = context.broadcast(source);
