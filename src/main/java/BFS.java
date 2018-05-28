@@ -26,7 +26,7 @@ public class BFS {
         final Broadcast<String> sourceId = context.broadcast(source);
 
         JavaRDD<String> lines = context.textFile(inputFile);
-
+        long startTime = System.currentTimeMillis();
         JavaPairRDD<String,Data> operations = lines.mapToPair(line->{
             String[] tokens = line.split(";");
             String node = tokens[0];
@@ -69,9 +69,7 @@ public class BFS {
                 return results.iterator();
             });
 
-            //processed.collect(); //kicks off map function...spark trick
-            System.out.println("+++++PROCESSED RESULTS+++++++");
-            processed.foreach(entry -> System.out.println(entry._1() + " " + entry._2().status));
+            processed.collect();
             operations = processed.reduceByKey((k1, k2) ->{
                 List<String> cons = null;
                 Integer dist = Integer.MAX_VALUE;
@@ -107,9 +105,8 @@ public class BFS {
                 }
                 return new Data(cons, dist, stat);
             });
-            System.out.println("+++++OPERATIONS RESULTS+++++++");
-            operations.foreach(entry -> System.out.println(entry._1() + ' ' + entry._2().status));
         }
-
+        long endTime = System.currentTimeMillis();
+        System.out.println("Elapsed Time: " + (endTime - startTime));
     }
 }
